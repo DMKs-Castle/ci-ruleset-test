@@ -1,0 +1,44 @@
+---
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "lint job"
+
+  test:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - run: echo "test job"
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - run: echo "build job"
+
+  ci:
+    name: ci
+    needs: [lint, test, build]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check all required jobs passed
+        run: |
+          results='${{ toJSON(needs) }}'
+          echo "$results"
+          if echo "$results" | grep -E '"result": *"(failure|cancelled|skipped)"' > /dev/null; then
+            echo "::error::One or more required jobs failed, were cancelled, or skipped"
+            exit 1
+          fi
+          echo "All required jobs passed"
